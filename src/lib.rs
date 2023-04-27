@@ -15,6 +15,7 @@ use tui::{backend::CrosstermBackend, widgets::ListState};
 pub mod aio;
 pub mod events;
 pub mod widget;
+pub mod search;
 mod config;
 
 pub type DynResult = Result<(), Box<dyn std::error::Error>>;

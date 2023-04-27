@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-
+use std::{collections::HashMap, ptr::null, fmt::Error};
+use stock::search::{SearchResult};
 use reqwest::{header};
 
 fn get_headers() -> header::HeaderMap {
@@ -11,9 +11,9 @@ fn get_headers() -> header::HeaderMap {
     headers
 }
 
-fn get_quotes_id(stock_code: &str)-> Result<String, Box<dyn std::error::Error>> {
+fn get_quotes_id(stock_code: &str)-> Result<SearchResult, Box<dyn std::error::Error>> {
     if stock_code.len() == 0 {
-        return Ok(("".to_string()));
+        return Err(Box::new(Error));
     }
 
     let url = "http://searchapi.eastmoney.com/api/suggest/get";
@@ -35,14 +35,15 @@ fn get_quotes_id(stock_code: &str)-> Result<String, Box<dyn std::error::Error>> 
         .query(&params)
         .send()?;
 
-    let body = response.text()?;
+    let body: SearchResult = response.json::<SearchResult>()?;
 
-    println!("{:?}", body);
+    // todo: save query result to local db
+    // println!("{:?}", body.quotation_code_table.data[0].quote_id);
 
     return Ok(body);
 }
 
-fn get_stock_ticks(stock_code: &str) -> Result<(), Box<dyn std::error::Error>>{
+fn get_stock_ticks(quote_id: &str) -> Result<(), Box<dyn std::error::Error>>{
       // Set up the URL and query parameters
       let url = "http://push2.eastmoney.com/api/qt/stock/fflow/kline/get";
       let mut params = HashMap::new();
@@ -55,7 +56,7 @@ fn get_stock_ticks(stock_code: &str) -> Result<(), Box<dyn std::error::Error>>{
        */
       params.insert("lmt", "0");
       params.insert("klt", "1");
-      params.insert("secid", stock_code);
+      params.insert("secid", quote_id);
       params.insert("fields1", "f1,f2,f3,f7");
       params.insert("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63");
   
@@ -82,7 +83,10 @@ fn get_stock_ticks(stock_code: &str) -> Result<(), Box<dyn std::error::Error>>{
 fn main() {
     
     let result = get_quotes_id("600519");
+    let quote_id = &result.unwrap().quotation_code_table.data[0].quote_id;
 
-    println!("{:?}", result);
+    println!("{:?}", quote_id);
 
+    let ticks = get_stock_ticks(quote_id);
+    
 }
