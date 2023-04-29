@@ -45,7 +45,7 @@ fn get_quotes_id(stock_code: &str)-> Result<SearchResult, Box<dyn std::error::Er
 
 fn get_stock_ticks(quote_id: &str) -> Result<(), Box<dyn std::error::Error>>{
       // Set up the URL and query parameters
-      let url = "http://push2.eastmoney.com/api/qt/stock/fflow/kline/get";
+      let url = "https://push2his.eastmoney.com/api/qt/stock/kline/get";
       let mut params = HashMap::new();
       /*
           ('lmt', '0'),
@@ -54,11 +54,14 @@ fn get_stock_ticks(quote_id: &str) -> Result<(), Box<dyn std::error::Error>>{
           ('fields1', 'f1,f2,f3,f7'),
           ('fields2', 'f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63'),
        */
-      params.insert("lmt", "0");
-      params.insert("klt", "1");
+      params.insert("beg", "20230426");
+      params.insert("end", "20230427");
+      params.insert("fqt", "1");
+      params.insert("rtntype", "6");
+      params.insert("klt", "60");
       params.insert("secid", quote_id);
-      params.insert("fields1", "f1,f2,f3,f7");
-      params.insert("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63");
+      params.insert("fields1", "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13");
+      params.insert("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61");
   
       println!("{:#?}", params);
   
