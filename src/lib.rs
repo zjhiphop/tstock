@@ -16,6 +16,7 @@ pub mod aio;
 pub mod events;
 pub mod widget;
 pub mod search;
+pub mod ticks;
 mod config;
 
 pub type DynResult = Result<(), Box<dyn std::error::Error>>;

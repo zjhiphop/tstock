@@ -4,7 +4,9 @@ use chrono::format::ParseError;
 
 use stock::search::{SearchResult};
 use reqwest::{header};
+use stock::ticks::QuoteResponse;
 
+#[derive(Debug)]
 struct StockTick {
     time: NaiveDate,
     tick: f64,
@@ -12,11 +14,11 @@ struct StockTick {
 }
 
 impl StockTick {
-    pub fn new(time: NaiveDate, interval: f64) -> StockTick {
+    pub fn new(time: NaiveDate, tick: f64) -> StockTick {
         StockTick {
             time: time,
-            tick: 0.0,
-            interval
+            tick: tick,
+            interval: 50.0
         }
     }
 }
@@ -62,7 +64,7 @@ fn get_quotes_id(stock_code: &str)-> Result<SearchResult, Box<dyn std::error::Er
     return Ok(body);
 }
 
-fn get_stock_ticks(quote_id: &str) -> Result<(), Box<dyn std::error::Error>>{
+fn get_stock_ticks(quote_id: &str) -> Result<(Vec<String>), Box<dyn std::error::Error>>{
       // Set up the URL and query parameters
       let url = "https://push2his.eastmoney.com/api/qt/stock/kline/get";
       let mut params = HashMap::new();
@@ -95,10 +97,12 @@ fn get_stock_ticks(quote_id: &str) -> Result<(), Box<dyn std::error::Error>>{
           .headers(headers)
           .query(&params)
           .send()?;
-      let body = response.text()?;
-      println!("{}", body);
+    //   let body = response.text()?;
+    //   println!("{}", body);
+    let body: QuoteResponse = response.json::<QuoteResponse>()?;
+    
 
-      Ok(())
+      Ok((body.data.klines))
 }
 
 // Get daily data split by minutes
@@ -109,13 +113,33 @@ fn main() -> Result<(), ParseError> {
 
     println!("{:?}", quote_id);
 
-    let ticks = get_stock_ticks(quote_id);
+    let ticks = get_stock_ticks(quote_id).unwrap();
+
+    // println!("{:?}", ticks);
 
     let date_only = NaiveDate::parse_from_str("2015-09-05", "%Y-%m-%d")?;
     println!("{}", date_only);
 
     // convert tick data to vec ticks list 
-    let lines = ticks.unwrap().data.klines;
+    let mut klineVec: Vec<StockTick> = vec![];
 
+    
+    let ticks_iter = ticks.iter();
+
+    for tick in ticks_iter {
+        let tick_item = tick.split(',').collect::<Vec<_>>();
+        let date =  NaiveDate::parse_from_str(tick_item[0], "%Y-%m-%d %H:%M").unwrap();
+        let tick_value =  tick_item[2].parse::<f64>().unwrap()-  tick_item[1].parse::<f64>().unwrap();
+
+        // println!("Date: {:?}", date);
+        // println!("Tick: {:?}", tick_value);
+
+        let item = StockTick::new(date, tick_value);
+
+        klineVec.push(item)
+    }
+
+    println!("{:?}", klineVec);
+    
     Ok(())
 }
