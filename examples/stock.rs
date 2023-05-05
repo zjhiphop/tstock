@@ -1,6 +1,25 @@
 use std::{collections::HashMap, ptr::null, fmt::Error};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::format::ParseError;
+
 use stock::search::{SearchResult};
 use reqwest::{header};
+
+struct StockTick {
+    time: NaiveDate,
+    tick: f64,
+    interval: f64
+}
+
+impl StockTick {
+    pub fn new(time: NaiveDate, interval: f64) -> StockTick {
+        StockTick {
+            time: time,
+            tick: 0.0,
+            interval
+        }
+    }
+}
 
 fn get_headers() -> header::HeaderMap {
     let mut headers = header::HeaderMap::new();
@@ -83,7 +102,7 @@ fn get_stock_ticks(quote_id: &str) -> Result<(), Box<dyn std::error::Error>>{
 }
 
 // Get daily data split by minutes
-fn main() {
+fn main() -> Result<(), ParseError> {
     
     let result = get_quotes_id("600519");
     let quote_id = &result.unwrap().quotation_code_table.data[0].quote_id;
@@ -91,5 +110,12 @@ fn main() {
     println!("{:?}", quote_id);
 
     let ticks = get_stock_ticks(quote_id);
-    
+
+    let date_only = NaiveDate::parse_from_str("2015-09-05", "%Y-%m-%d")?;
+    println!("{}", date_only);
+
+    // convert tick data to vec ticks list 
+    let lines = ticks.unwrap().data.klines;
+
+    Ok(())
 }
