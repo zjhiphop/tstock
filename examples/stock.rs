@@ -1,5 +1,6 @@
+use std::ops::Sub;
 use std::{collections::HashMap, ptr::null, fmt::Error};
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Local, Duration};
 use chrono::format::ParseError;
 
 use stock::search::{SearchResult};
@@ -8,17 +9,19 @@ use stock::ticks::QuoteResponse;
 
 #[derive(Debug)]
 struct StockTick {
-    time: NaiveDate,
-    tick: f64,
-    interval: f64
+    time: NaiveDateTime,
+    open: f64,
+    close: f64,
+    interval: u8
 }
 
 impl StockTick {
-    pub fn new(time: NaiveDate, tick: f64) -> StockTick {
+    pub fn new(time: NaiveDateTime, open: f64, close: f64, time_klt: u8) -> StockTick {
         StockTick {
-            time: time,
-            tick: tick,
-            interval: 50.0
+            time,
+            open,
+            close,
+            interval: time_klt
         }
     }
 }
@@ -64,7 +67,7 @@ fn get_quotes_id(stock_code: &str)-> Result<SearchResult, Box<dyn std::error::Er
     return Ok(body);
 }
 
-fn get_stock_ticks(quote_id: &str) -> Result<(Vec<String>), Box<dyn std::error::Error>>{
+fn get_stock_ticks(quote_id: &str, time_klt: u8) -> Result<(Vec<String>), Box<dyn std::error::Error>>{
       // Set up the URL and query parameters
       let url = "https://push2his.eastmoney.com/api/qt/stock/kline/get";
       let mut params = HashMap::new();
@@ -75,11 +78,17 @@ fn get_stock_ticks(quote_id: &str) -> Result<(Vec<String>), Box<dyn std::error::
           ('fields1', 'f1,f2,f3,f7'),
           ('fields2', 'f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63'),
        */
-      params.insert("beg", "20230426");
-      params.insert("end", "20230427");
+
+      let today = Local::now();
+      let ten_days_ago = today.sub(Duration::days(3)).format("%Y%m%d").to_string();
+      let today = today.format("%Y%m%d").to_string();
+      let time_range = format!("{}", time_klt);
+
+      params.insert("beg", ten_days_ago.as_str());
+      params.insert("end", today.as_str());
       params.insert("fqt", "1");
       params.insert("rtntype", "6");
-      params.insert("klt", "60");
+      params.insert("klt", time_range.as_str()); // per day data
       params.insert("secid", quote_id);
       params.insert("fields1", "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13");
       params.insert("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61");
@@ -112,13 +121,13 @@ fn main() -> Result<(), ParseError> {
     let quote_id = &result.unwrap().quotation_code_table.data[0].quote_id;
 
     println!("{:?}", quote_id);
-
-    let ticks = get_stock_ticks(quote_id).unwrap();
+    let time_klt = 30; // tick duction by 30 mins
+    let ticks = get_stock_ticks(quote_id, time_klt).unwrap();
 
     // println!("{:?}", ticks);
 
-    let date_only = NaiveDate::parse_from_str("2015-09-05", "%Y-%m-%d")?;
-    println!("{}", date_only);
+    // let date_only = NaiveDate::parse_from_str("2015-09-05", "%Y-%m-%d")?;
+    // println!("{}", date_only);
 
     // convert tick data to vec ticks list 
     let mut klineVec: Vec<StockTick> = vec![];
@@ -128,13 +137,14 @@ fn main() -> Result<(), ParseError> {
 
     for tick in ticks_iter {
         let tick_item = tick.split(',').collect::<Vec<_>>();
-        let date =  NaiveDate::parse_from_str(tick_item[0], "%Y-%m-%d %H:%M").unwrap();
-        let tick_value =  tick_item[2].parse::<f64>().unwrap()-  tick_item[1].parse::<f64>().unwrap();
+        let date =  NaiveDateTime::parse_from_str(tick_item[0], "%Y-%m-%d %H:%M").unwrap();
+        let close = tick_item[2].parse::<f64>().unwrap();
+        let open =  tick_item[1].parse::<f64>().unwrap();
 
-        // println!("Date: {:?}", date);
+        println!("Date: {:?}", date);
         // println!("Tick: {:?}", tick_value);
 
-        let item = StockTick::new(date, tick_value);
+        let item = StockTick::new(date, open, close, time_klt);
 
         klineVec.push(item)
     }
