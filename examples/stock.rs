@@ -132,7 +132,6 @@ fn main() -> Result<(), ParseError> {
     // convert tick data to vec ticks list 
     let mut klineVec: Vec<StockTick> = vec![];
 
-    
     let ticks_iter = ticks.iter();
 
     for tick in ticks_iter {

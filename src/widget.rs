@@ -2,7 +2,7 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, List, ListItem, Paragraph},
+    widgets::{Block, BorderType, Borders, List, ListItem, Paragraph, Dataset, GraphType, Chart, Axis, Wrap}, symbols,
 };
 
 use crate::{App, AppState, Stock};
@@ -27,8 +27,14 @@ pub fn main_chunks(area: Rect) -> Vec<Rect> {
     let center = Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)
-        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
+        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
         .split(parent[1]);
+
+    let vcenter =  Layout::default()
+        .direction(Direction::Horizontal)
+        .margin(0)
+        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
+        .split(center[1]);
 
     //计算新建stock时的弹框位置
     let popup = Layout::default()
@@ -56,7 +62,7 @@ pub fn main_chunks(area: Rect) -> Vec<Rect> {
         )
         .split(popup[1]);
 
-    vec![parent[0], center[0], center[1], parent[2], popline[1]]
+    vec![parent[0], center[0], vcenter[0], parent[2], popline[1], vcenter[1]]
 }
 
 pub fn stock_list(stocks: &Vec<Stock>) -> List {
@@ -121,6 +127,42 @@ pub fn stock_detail(app: &App) -> Paragraph {
                 .borders(Borders::ALL)
                 .border_type(BorderType::Plain),
         )
+
+        
+    // Paragraph::new("test test test test test test test test test test test t test test test test test test t test test test test test test ")
+    //     .block(Block::default().title("Paragraph").borders(Borders::ALL))
+    //     .style(Style::default().fg(Color::White).bg(Color::Black))
+    //     .alignment(Alignment::Center)
+    //     .wrap(Wrap { trim: false })
+}
+
+pub fn stock_line_chart(app: &App) -> Chart {
+    let datasets = vec![
+        Dataset::default()
+            .name("data1")
+            .marker(symbols::Marker::Dot)
+            .graph_type(GraphType::Scatter)
+            .style(Style::default().fg(Color::Cyan))
+            .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
+        Dataset::default()
+            .name("data2")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Magenta))
+            .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)]),
+    ];
+    Chart::new(datasets)
+        .block(Block::default().title("Chart"))
+        .x_axis(Axis::default()
+            .title(Span::styled("X Axis", Style::default().fg(Color::Red)))
+            .style(Style::default().fg(Color::White))
+            .bounds([0.0, 10.0])
+            .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
+        .y_axis(Axis::default()
+            .title(Span::styled("Y Axis", Style::default().fg(Color::Red)))
+            .style(Style::default().fg(Color::White))
+            .bounds([0.0, 10.0])
+            .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
 }
 
 pub fn stock_input(app: &App) -> Paragraph {
