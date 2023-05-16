@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -136,21 +138,54 @@ pub fn stock_detail(app: &App) -> Paragraph {
     //     .wrap(Wrap { trim: false })
 }
 
-pub fn stock_line_chart(app: &App) -> Chart {
-    let datasets = vec![
-        Dataset::default()
-            .name("data1")
-            .marker(symbols::Marker::Dot)
-            .graph_type(GraphType::Scatter)
-            .style(Style::default().fg(Color::Cyan))
-            .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
-        Dataset::default()
-            .name("data2")
-            .marker(symbols::Marker::Braille)
-            .graph_type(GraphType::Line)
-            .style(Style::default().fg(Color::Magenta))
-            .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)]),
-    ];
+pub fn stock_line_chart(app: &App) -> Chart  {
+    let sel = app.stocks_state.selected().unwrap_or(0);
+    //这里要防止sel超出列表范围
+    let stocks = app.stocks.lock().unwrap();
+    
+    let mut datasets = vec![];
+    
+    // if app.stocks_state.selected().is_some() && sel < stocks.len() {
+    //     let stock = stocks.get(sel).unwrap();
+    //     let open_lines = stock.klines.iter().map(|line| (line.time, line.open)).collect::<Vec<_>>();
+    //     let close_lines = stock.klines.iter().map(|line| (line.time, line.close)).collect::<Vec<_>>();
+        
+    //     let open_sets = Dataset::default()
+    //         .name("open")
+    //         .marker(symbols::Marker::Dot)
+    //         .graph_type(GraphType::Scatter)
+    //         .style(Style::default().fg(Color::Cyan))
+    //         .data(open_lines);
+
+    //     let close_sets = Dataset::default()
+    //         .name("close")
+    //         .marker(symbols::Marker::Braille)
+    //         .graph_type(GraphType::Line)
+    //         .style(Style::default().fg(Color::Magenta))
+    //         .data(&close_lines);
+
+    //         datasets.extend([open_sets, close_sets]);
+    // } 
+    let stock = stocks.get(sel).unwrap();
+    let open_lines = stock.klines.iter().map(|line| (line.time, line.open)).collect::<Vec<_>>();
+    let close_lines = stock.klines.iter().map(|line| (line.time, line.close)).collect::<Vec<_>>();
+    
+    let open_sets = Dataset::default()
+        .name("open")
+        .marker(symbols::Marker::Dot)
+        .graph_type(GraphType::Scatter)
+        .style(Style::default().fg(Color::Cyan))
+        .data(&open_lines);
+
+    let close_sets = Dataset::default()
+        .name("close")
+        .marker(symbols::Marker::Braille)
+        .graph_type(GraphType::Line)
+        .style(Style::default().fg(Color::Magenta))
+        .data(&close_lines);
+
+        datasets.extend([open_sets, close_sets]);
+
     Chart::new(datasets)
         .block(Block::default().title("Chart"))
         .x_axis(Axis::default()

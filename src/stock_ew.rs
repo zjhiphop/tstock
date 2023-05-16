@@ -3,20 +3,24 @@ use std::{collections::HashMap, ptr::null, fmt::Error};
 use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Local, Duration};
 use chrono::format::ParseError;
 
-use stock::search::{SearchResult};
+// use stock::search::{SearchResult};
 use reqwest::{header};
-use stock::ticks::QuoteResponse;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
-struct StockTick {
-    time: NaiveDateTime,
-    open: f64,
-    close: f64,
-    interval: u8
+use crate::search::SearchResult;
+use crate::ticks::QuoteResponse;
+// use stock::ticks::QuoteResponse;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct StockTick {
+   pub time: f64,
+   pub open: f64,
+   pub close: f64,
+   pub interval: u8
 }
 
 impl StockTick {
-    pub fn new(time: NaiveDateTime, open: f64, close: f64, time_klt: u8) -> StockTick {
+    pub fn new(time: f64, open: f64, close: f64, time_klt: u8) -> StockTick {
         StockTick {
             time,
             open,
@@ -49,7 +53,7 @@ fn get_quotes_id(stock_code: &str)-> Result<SearchResult, Box<dyn std::error::Er
     params.insert("token", "D43BF722C8E33BDC906FB84D85E326E8");
     params.insert("count", "1");
     
-    println!("params: {:?}, headers: {:#?}", params, headers);
+    // println!("params: {:?}, headers: {:#?}", params, headers);
 
     let client = reqwest::blocking::Client::new();
 
@@ -93,11 +97,11 @@ fn get_stock_ticks(quote_id: &str, time_klt: u8) -> Result<(Vec<String>), Box<dy
       params.insert("fields1", "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13");
       params.insert("fields2", "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61");
   
-      println!("{:#?}", params);
+    //   println!("{:#?}", params);
   
       // Set up the headers
       let headers = get_headers();
-      println!("{:#?}", headers);
+    //   println!("{:#?}", headers);
   
       let client = reqwest::blocking::Client::new();
   
@@ -114,12 +118,12 @@ fn get_stock_ticks(quote_id: &str, time_klt: u8) -> Result<(Vec<String>), Box<dy
       Ok((body.data.klines))
 }
 
-fn get_kline(code: &str) -> Vec<StockTick> {
+pub fn get_kline(code: &str) -> Vec<StockTick> {
 
     let result = get_quotes_id(code);
     let quote_id = &result.unwrap().quotation_code_table.data[0].quote_id;
 
-    println!("{:?}", quote_id);
+    // println!("{:?}", quote_id);
     let time_klt = 30; // tick duction by 30 mins
     let ticks = get_stock_ticks(quote_id, time_klt).unwrap();
 
@@ -139,23 +143,18 @@ fn get_kline(code: &str) -> Vec<StockTick> {
         let close = tick_item[2].parse::<f64>().unwrap();
         let open =  tick_item[1].parse::<f64>().unwrap();
 
-        println!("Date: {:?}", date.format("%H%M").to_string());
+        // println!("Date: {:?}", date.format("%H%M").to_string());
         // println!("Tick: {:?}", tick_value);
 
-        let item = StockTick::new(date, open, close, time_klt);
+        let time_number: f64 = date.format("%H%M").to_string()
+            .trim()
+            .parse()
+            .expect("Wanted a number");
+
+        let item = StockTick::new(time_number, open, close, time_klt);
 
         klineVec.push(item);
     }
 
     klineVec
-}
-
-// Get daily data split by minutes
-fn main() -> Result<(), ParseError> {
-    
-    let mut klineVec: Vec<StockTick> = get_kline("002415");
-
-    println!("{:?}", klineVec);
-    
-    Ok(())
 }

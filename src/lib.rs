@@ -10,6 +10,7 @@ use chrono::{DateTime, Local};
 use http_req::request;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
+use stock_ew::StockTick;
 use tui::{backend::CrosstermBackend, widgets::ListState};
 
 pub mod aio;
@@ -17,6 +18,7 @@ pub mod events;
 pub mod widget;
 pub mod search;
 pub mod ticks;
+pub mod stock_ew;
 mod config;
 
 pub type DynResult = Result<(), Box<dyn std::error::Error>>;
@@ -34,8 +36,8 @@ pub struct Stock {
     pub open: f64,      //今开
     pub yestclose: f64, //昨收
     pub high: f64,      //最高
-    pub low: f64,       //最低
-                        //pub slice: Vec<f64>
+    pub low: f64,       //最低//pub slice: Vec<f64>
+    pub klines: Vec<StockTick>
 }
 
 impl Stock {
@@ -49,6 +51,7 @@ impl Stock {
             yestclose: 0.0,
             high: 0.0,
             low: 0.0,
+            klines: vec![]
             //slice:vec![],
         }
     }
@@ -191,7 +194,7 @@ impl App {
                                 .unwrap();
                             stock.high = obj.get("high").unwrap_or(&json!(0.0)).as_f64().unwrap();
                             stock.low = obj.get("low").unwrap_or(&json!(0.0)).as_f64().unwrap();
-
+                            stock.klines = stock_ew::get_kline(&stock.code[1..]);
                             // if json.contains_key(&stock.code) {
                             //     let mut writer2 = Vec::new();
                             //     request::get(format!("http://img1.money.126.net/data/hs/time/today/{}.json",stock.code), &mut writer2)?;
