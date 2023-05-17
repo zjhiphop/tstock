@@ -138,66 +138,64 @@ pub fn stock_detail(app: &App) -> Paragraph {
     //     .wrap(Wrap { trim: false })
 }
 
-pub fn stock_line_chart(app: &App) -> Chart  {
-    let sel = app.stocks_state.selected().unwrap_or(0);
-    //这里要防止sel超出列表范围
-    let stocks = app.stocks.lock().unwrap();
+pub fn stock_line_chart(stock: &Stock) -> Chart  {
+    // let sel = app.stocks_state.selected().unwrap_or(0);
+    // //这里要防止sel超出列表范围
+    // let stocks = app.stocks.lock().unwrap();
     
     let mut datasets = vec![];
     
-    // if app.stocks_state.selected().is_some() && sel < stocks.len() {
-    //     let stock = stocks.get(sel).unwrap();
-    //     let open_lines = stock.klines.iter().map(|line| (line.time, line.open)).collect::<Vec<_>>();
-    //     let close_lines = stock.klines.iter().map(|line| (line.time, line.close)).collect::<Vec<_>>();
+    // // if app.stocks_state.selected().is_some() && sel < stocks.len() {
+    // //     let stock = stocks.get(sel).unwrap();
+    // //     let open_lines = stock.klines.iter().map(|line| (line.time, line.open)).collect::<Vec<_>>();
+    // //     let close_lines = stock.klines.iter().map(|line| (line.time, line.close)).collect::<Vec<_>>();
         
-    //     let open_sets = Dataset::default()
-    //         .name("open")
-    //         .marker(symbols::Marker::Dot)
-    //         .graph_type(GraphType::Scatter)
-    //         .style(Style::default().fg(Color::Cyan))
-    //         .data(open_lines);
+    // //     let open_sets = Dataset::default()
+    // //         .name("open")
+    // //         .marker(symbols::Marker::Dot)
+    // //         .graph_type(GraphType::Scatter)
+    // //         .style(Style::default().fg(Color::Cyan))
+    // //         .data(open_lines);
 
-    //     let close_sets = Dataset::default()
-    //         .name("close")
-    //         .marker(symbols::Marker::Braille)
-    //         .graph_type(GraphType::Line)
-    //         .style(Style::default().fg(Color::Magenta))
-    //         .data(&close_lines);
+    // //     let close_sets = Dataset::default()
+    // //         .name("close")
+    // //         .marker(symbols::Marker::Braille)
+    // //         .graph_type(GraphType::Line)
+    // //         .style(Style::default().fg(Color::Magenta))
+    // //         .data(&close_lines);
 
-    //         datasets.extend([open_sets, close_sets]);
-    // } 
-    let stock = stocks.get(sel).unwrap();
-    let open_lines = stock.klines.iter().map(|line| (line.time, line.open)).collect::<Vec<_>>();
-    let close_lines = stock.klines.iter().map(|line| (line.time, line.close)).collect::<Vec<_>>();
-    
+    // //         datasets.extend([open_sets, close_sets]);
+    // // } 
+    // let stock = stocks.get(sel).unwrap();
+
     let open_sets = Dataset::default()
         .name("open")
         .marker(symbols::Marker::Dot)
         .graph_type(GraphType::Scatter)
         .style(Style::default().fg(Color::Cyan))
-        .data(&open_lines);
+        .data(&stock.open_line);
 
     let close_sets = Dataset::default()
         .name("close")
         .marker(symbols::Marker::Braille)
         .graph_type(GraphType::Line)
         .style(Style::default().fg(Color::Magenta))
-        .data(&close_lines);
+        .data(&stock.close_line);
 
-        datasets.extend([open_sets, close_sets]);
+    datasets.extend([open_sets, close_sets]);
 
     Chart::new(datasets)
-        .block(Block::default().title("Chart"))
+        .block(Block::default().title("半小时K线"))
         .x_axis(Axis::default()
             .title(Span::styled("X Axis", Style::default().fg(Color::Red)))
             .style(Style::default().fg(Color::White))
-            .bounds([0.0, 10.0])
-            .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
+            .bounds([1000.0, 1530.0])
+            .labels(["1000", "1530"].iter().cloned().map(Span::from).collect()))
         .y_axis(Axis::default()
             .title(Span::styled("Y Axis", Style::default().fg(Color::Red)))
             .style(Style::default().fg(Color::White))
-            .bounds([0.0, 10.0])
-            .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
+            .bounds([0.0, stock.open_line[0].1 * 1.5])
+            .labels(["0.0", "1000.0"].iter().cloned().map(Span::from).collect()))
 }
 
 pub fn stock_input(app: &App) -> Paragraph {

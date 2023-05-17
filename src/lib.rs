@@ -37,7 +37,9 @@ pub struct Stock {
     pub yestclose: f64, //昨收
     pub high: f64,      //最高
     pub low: f64,       //最低//pub slice: Vec<f64>
-    pub klines: Vec<StockTick>
+    pub klines: Vec<StockTick>,
+    pub open_line: Vec<(f64,f64)>,
+    pub close_line: Vec<(f64,f64)>
 }
 
 impl Stock {
@@ -51,7 +53,9 @@ impl Stock {
             yestclose: 0.0,
             high: 0.0,
             low: 0.0,
-            klines: vec![]
+            klines: vec![],
+            open_line: vec![],
+            close_line: vec![]
             //slice:vec![],
         }
     }
@@ -195,6 +199,8 @@ impl App {
                             stock.high = obj.get("high").unwrap_or(&json!(0.0)).as_f64().unwrap();
                             stock.low = obj.get("low").unwrap_or(&json!(0.0)).as_f64().unwrap();
                             stock.klines = stock_ew::get_kline(&stock.code[1..]);
+                            stock.open_line = stock.klines.iter().map(|line| (line.time, line.open)).collect::<Vec<_>>();
+                            stock.close_line = stock.klines.iter().map(|line| (line.time, line.close)).collect::<Vec<_>>();
                             // if json.contains_key(&stock.code) {
                             //     let mut writer2 = Vec::new();
                             //     request::get(format!("http://img1.money.126.net/data/hs/time/today/{}.json",stock.code), &mut writer2)?;

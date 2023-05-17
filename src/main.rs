@@ -76,8 +76,16 @@ fn on_draw(frame: &mut TerminalFrame, app: &mut App) {
     //因为render stock_list时会修改滚动状态，后面如果要用到这个值，就需要先做list的render
     frame.render_widget(widget::title_bar(app, frame.size()), chunks[0]);
     frame.render_widget(widget::stock_detail(app), chunks[2]);
-    frame.render_widget(widget::stock_line_chart(app), chunks[5]);
     frame.render_widget(widget::status_bar(app), chunks[3]);
+
+    let sel = app.stocks_state.selected().unwrap_or(0);
+    //这里要防止sel超出列表范围
+    let stocks = app.stocks.lock().unwrap();
+    if app.stocks_state.selected().is_some() && sel < stocks.len() {
+        let stock = stocks.get(sel).unwrap();
+
+        frame.render_widget(widget::stock_line_chart(&stock), chunks[5]);
+    }
 
     if let AppState::Adding = app.state {
         //popup需要先clear一下,否则下面的背景色会透上来
